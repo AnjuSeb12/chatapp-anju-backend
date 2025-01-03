@@ -7,8 +7,8 @@ const saltRound = 10;
 
 export const userRegisteration = async (req, res) => {
     try {
-        const { username, email, password,bio} = req.body;
-     console.log(req.body.password)
+        const { username, email, password, bio } = req.body;
+        console.log(req.body.password)
 
         if (!username || !email || !password) {
             return res.status(400).json({ message: 'All fields are required.' });
@@ -27,7 +27,7 @@ export const userRegisteration = async (req, res) => {
             email,
             password: hashedPass,
             bio
-            
+
 
         });
         await user.save();
@@ -40,7 +40,7 @@ export const userRegisteration = async (req, res) => {
         }
         res.status(201).json({
             message: 'User registered successfully.',
-            
+
         });
 
 
@@ -53,7 +53,7 @@ export const userRegisteration = async (req, res) => {
     }
 
 
-  
+
 
 
 
@@ -64,7 +64,7 @@ export const userRegisteration = async (req, res) => {
 
 export const userLogin = async (req, res) => {
     try {
-        const {email,password} = req.body;
+        const { email, password } = req.body;
 
 
         // required field
@@ -81,7 +81,7 @@ export const userLogin = async (req, res) => {
             });
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);
-       
+
         if (!isPasswordValid) {
             return res.status(401).json({
                 success: false,
@@ -92,13 +92,18 @@ export const userLogin = async (req, res) => {
         // update lastseen
         // user.lastSeen = new Date();
         // await user.save()
-        
+
 
 
         const token = generateToken(user);
 
 
-        res.cookie("token", token);
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // secure in production
+            sameSite: 'strict', // prevent CSRF
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        });
         res.status(201).json({
             success: true,
             message: "Loged in Successfully!",
@@ -106,7 +111,7 @@ export const userLogin = async (req, res) => {
             user: {
                 id: user._id,
                 username: user.username,
-                
+
             }
 
 
@@ -114,69 +119,70 @@ export const userLogin = async (req, res) => {
 
 
     } catch (error) {
-        
-        res.status(500).json({ 
-            success:false,
-            message: 'Error registering user.', error: error.message });
+
+        res.status(500).json({
+            success: false,
+            message: 'Error registering user.', error: error.message
+        });
 
     }
 
 }
-export const updateUser=async (req,res)=>{
+export const updateUser = async (req, res) => {
     try {
-        const {id}=req.params.id;
-        const updatedUser= await User.findByIdAndUpdate(id,req.body,{new:true})
-        if(updateUser){
+        const { id } = req.params.id;
+        const updatedUser = await User.findByIdAndUpdate(id, req.body, { new: true })
+        if (updateUser) {
             res.status(200).json({
-                message:"Updated successfully",
+                message: "Updated successfully",
                 updatedUser
             })
         }
-        
+
     } catch (error) {
         return res.status(500).json({
-            message:"Internal server error",
-            success:false,
-            error:error.message
+            message: "Internal server error",
+            success: false,
+            error: error.message
         })
-        
+
     }
 }
 
 
-export const deleteUser=async (req,res)=>{
+export const deleteUser = async (req, res) => {
     try {
-        const deleteUser=await User.findByIdAndDelete(req.params.id)
+        const deleteUser = await User.findByIdAndDelete(req.params.id)
         res.status(200).json({
-            message:"Deleted Successfully"
+            message: "Deleted Successfully"
         })
-        
+
     } catch (error) {
         return res.status(500).json({
-            error:error.message,
+            error: error.message,
         })
-        
+
     }
 }
 
-export const getUsers=async (req,res)=>{
+export const getUsers = async (req, res) => {
     try {
 
-        const userId=req.user.id;
+        const userId = req.user.id;
 
         const users = await User.find({
-            _id:{
-                $nin:[userId]
+            _id: {
+                $nin: [userId]
                 // $in:[userId]
             }
         })
         res.status(200).json({
-            message:"Success",
+            message: "Success",
             users
         })
-        
+
     } catch (error) {
 
-        
+
     }
 }
